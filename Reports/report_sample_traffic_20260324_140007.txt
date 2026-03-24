@@ -1,0 +1,56 @@
+=============================================================
+  NETWORK TRAFFIC ANALYSIS REPORT
+=============================================================
+  File: sample_traffic.pcap
+  Total Packets: 335
+  Unique IPs: 168
+  Time Range: 2026-03-24 12:59:49 - 2026-03-24 13:04:45
+  Analysis Date: 2026-03-24 14:00:07
+=============================================================
+
+[!] PORT SCAN DETECTED
+    Source: 192.168.1.105
+    Target: 10.0.0.50
+    Ports scanned: 47
+    Duration: 11.5 seconds
+    Sample ports: [42, 92, 105, 123, 128, 129, 135, 176, 183, 193]
+
+[*] DNS ANOMALY DETECTED
+    Source: 192.168.1.42
+    Query: aHR0cHM6Ly9leGFtcGxl.suspicious-domain.xyz
+    Reason: Query to suspicious TLD: .xyz
+
+[*] DNS ANOMALY DETECTED
+    Source: 192.168.1.42
+    Query: dGhpcyBpcyBhIHRlc3Q.suspicious-domain.xyz
+    Reason: Query to suspicious TLD: .xyz
+
+[*] DNS ANOMALY DETECTED
+    Source: 192.168.1.42
+    Query: c2VjcmV0IGRhdGEgZXhmaWx0cmF0aW9u.suspicious-domain.xyz
+    Reason: Domain length (54 chars) exceeds threshold — possible DNS tunneling
+
+[*] DNS ANOMALY DETECTED
+    Source: 192.168.1.42
+    Query: c2VjcmV0IGRhdGEgZXhmaWx0cmF0aW9u.suspicious-domain.xyz
+    Reason: Query to suspicious TLD: .xyz
+
+[*] DNS ANOMALY DETECTED
+    Source: 192.168.1.42
+    Query: bG9uZyBlbmNvZGVkIHN0cmluZyBoZXJl.data-exfil.top
+    Reason: Query to suspicious TLD: .top
+
+[*] DNS ANOMALY DETECTED
+    Source: 192.168.1.42
+    Query: YW5vdGhlciBlbmNvZGVkIHBheWxvYWQ.data-exfil.top
+    Reason: Query to suspicious TLD: .top
+
+[!] BRUTE FORCE ATTEMPT DETECTED
+    Source: 203.0.113.77
+    Target: 10.0.0.10:22 (SSH)
+    Attempts: 83
+    Duration: 45.1 seconds
+
+-------------------------------------------------------------
+  SUMMARY: 8 alerts generated | 2 critical | 6 warning
+-------------------------------------------------------------
