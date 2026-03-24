@@ -41,7 +41,7 @@ network-traffic-analyzer/
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/network-traffic-analyzer.git
+git clone https://github.com/DSaint96/network-traffic-analyzer.git
 cd network-traffic-analyzer
 ```
 
@@ -109,7 +109,7 @@ After running, check the `reports/` folder for the generated analysis report.
 
 **Dennis Saint**
 Cybersecurity student & aspiring SOC Analyst
-[GitHub](https://github.com/YOUR_USERNAME) | [LinkedIn](https://linkedin.com/in/YOUR_LINKEDIN)
+[GitHub](https://github.com/DSaint96) | [LinkedIn](https://linkedin.com/in/YOUR_LINKEDIN)
 
 ## License
 
