@@ -26,8 +26,8 @@ def detect_port_scans(packets, port_threshold=20, time_window=60):
     for pkt in packets:
         if pkt.haslayer(TCP):
             tcp = pkt[TCP]
-            # Look for SYN packets (flag 0x02) — the first step of a connection
-            if tcp.flags == 0x02:
+            # Look for SYN packets — the first step of a connection
+            if tcp.flags == "S":
                 src_ip = pkt.sprintf("%IP.src%")
                 dst_ip = pkt.sprintf("%IP.dst%")
                 dst_port = tcp.dport
@@ -43,9 +43,10 @@ def detect_port_scans(packets, port_threshold=20, time_window=60):
         if len(data["ports"]) >= port_threshold:
             timestamps = sorted(data["timestamps"])
             duration = timestamps[-1] - timestamps[0]
-            
+
             # Check if activity falls within the time window
             if duration <= time_window:
+                from datetime import datetime
                 alerts.append({
                     "type": "PORT_SCAN",
                     "severity": "CRITICAL",
@@ -53,7 +54,9 @@ def detect_port_scans(packets, port_threshold=20, time_window=60):
                     "target_ip": dst_ip,
                     "ports_scanned": len(data["ports"]),
                     "duration_seconds": round(duration, 1),
-                    "sample_ports": sorted(list(data["ports"]))[:10]
+                    "sample_ports": sorted(list(data["ports"]))[:10],
+                    "first_seen": datetime.fromtimestamp(timestamps[0]).strftime("%Y-%m-%d %H:%M:%S"),
+                    "last_seen": datetime.fromtimestamp(timestamps[-1]).strftime("%Y-%m-%d %H:%M:%S"),
                 })
     
     return alerts

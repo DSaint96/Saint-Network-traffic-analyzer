@@ -13,10 +13,34 @@ Author: Dennis Saint
 
 import sys
 import os
+import json
+import argparse
 from datetime import datetime
 from scapy.all import rdpcap, IP
 
 from detections import detect_port_scans, detect_dns_anomalies, detect_brute_force
+
+MITRE_MAPPING = {
+    "PORT_SCAN":   {"id": "T1046", "name": "Network Service Discovery",      "tactic": "Discovery"},
+    "BRUTE_FORCE": {"id": "T1110", "name": "Brute Force",                    "tactic": "Credential Access"},
+    "DNS_ANOMALY": {"id": "T1071.004", "name": "Application Layer Protocol: DNS", "tactic": "Command and Control"},
+}
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Network Traffic Analyzer - Automated Threat Detection"
+    )
+    parser.add_argument("pcap_file", help="Path to the PCAP file to analyze")
+    parser.add_argument(
+        "--output", default="reports",
+        help="Output directory for reports (default: reports)"
+    )
+    parser.add_argument(
+        "--json", action="store_true",
+        help="Also save a JSON report alongside the text report"
+    )
+    return parser.parse_args()
 
 
 def print_banner():
@@ -78,7 +102,18 @@ def format_alert(alert):
         lines.append(f"    Target: {alert['target_ip']}:{alert['target_port']} ({alert['service']})")
         lines.append(f"    Attempts: {alert['attempts']}")
         lines.append(f"    Duration: {alert['duration_seconds']} seconds")
-    
+        if "first_seen" in alert:
+            lines.append(f"    First Seen: {alert['first_seen']}")
+            lines.append(f"    Last Seen:  {alert['last_seen']}")
+
+    if alert["type"] == "PORT_SCAN" and "first_seen" in alert:
+        lines.append(f"    First Seen: {alert['first_seen']}")
+        lines.append(f"    Last Seen:  {alert['last_seen']}")
+
+    mitre = MITRE_MAPPING.get(alert["type"])
+    if mitre:
+        lines.append(f"    MITRE ATT&CK: {mitre['id']} - {mitre['name']} | Tactic: {mitre['tactic']}")
+
     return "\n".join(lines)
 
 
@@ -119,22 +154,44 @@ def generate_report(pcap_file, summary, all_alerts, output_dir="reports"):
     return report_file
 
 
+def generate_json_report(pcap_file, summary, all_alerts, output_dir="reports"):
+    """Save analysis results as a JSON file for SIEM ingestion or further processing."""
+    os.makedirs(output_dir, exist_ok=True)
+
+    base_name = os.path.splitext(os.path.basename(pcap_file))[0]
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    report_file = os.path.join(output_dir, f"report_{base_name}_{timestamp}.json")
+
+    critical = sum(1 for a in all_alerts if a["severity"] == "CRITICAL")
+    warning = sum(1 for a in all_alerts if a["severity"] == "WARNING")
+
+    output = {
+        "analysis_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "pcap_file": os.path.basename(pcap_file),
+        "summary": {
+            **summary,
+            "total_alerts": len(all_alerts),
+            "critical": critical,
+            "warning": warning,
+        },
+        "alerts": [
+            {**alert, "mitre": MITRE_MAPPING.get(alert["type"])}
+            for alert in all_alerts
+        ],
+    }
+
+    with open(report_file, "w") as f:
+        json.dump(output, f, indent=2)
+
+    return report_file
+
+
 def main():
     """Main entry point."""
-    if len(sys.argv) < 2:
-        print("Usage: python analyzer.py <pcap_file> [--output reports/]")
-        print("Example: python analyzer.py sample_pcaps/sample_traffic.pcap")
-        sys.exit(1)
-    
-    pcap_file = sys.argv[1]
-    output_dir = "reports"
-    
-    # Parse optional output directory
-    if "--output" in sys.argv:
-        idx = sys.argv.index("--output")
-        if idx + 1 < len(sys.argv):
-            output_dir = sys.argv[idx + 1]
-    
+    args = parse_args()
+    pcap_file = args.pcap_file
+    output_dir = args.output
+
     # Validate file exists
     if not os.path.exists(pcap_file):
         print(f"Error: File not found: {pcap_file}")
@@ -194,9 +251,14 @@ def main():
     print(f"  SUMMARY: {len(all_alerts)} alerts | {critical} critical | {warning} warning")
     print("-" * 61)
     
-    # Save report
+    # Save reports
     report_file = generate_report(pcap_file, summary, all_alerts, output_dir)
     print(f"\n  Report saved: {report_file}")
+
+    if args.json:
+        json_file = generate_json_report(pcap_file, summary, all_alerts, output_dir)
+        print(f"  JSON report:  {json_file}")
+
     print()
 
 

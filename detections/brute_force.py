@@ -50,7 +50,7 @@ def detect_brute_force(packets, attempt_threshold=ATTEMPT_THRESHOLD,
             # Only monitor authentication-related ports
             if dst_port in AUTH_PORTS:
                 # SYN packets indicate new connection attempts
-                if tcp.flags == 0x02:
+                if tcp.flags == "S":
                     src_ip = pkt.sprintf("%IP.src%")
                     dst_ip = pkt.sprintf("%IP.dst%")
                     timestamp = float(pkt.time)
@@ -64,16 +64,17 @@ def detect_brute_force(packets, attempt_threshold=ATTEMPT_THRESHOLD,
         if len(timestamps) >= attempt_threshold:
             sorted_times = sorted(timestamps)
             duration = sorted_times[-1] - sorted_times[0]
-            
+
             if duration <= time_window:
                 service = AUTH_PORTS.get(dst_port, "Unknown")
-                
+
                 # Determine severity based on attempt count
                 if len(timestamps) >= 50:
                     severity = "CRITICAL"
                 else:
                     severity = "WARNING"
-                
+
+                from datetime import datetime
                 alerts.append({
                     "type": "BRUTE_FORCE",
                     "severity": severity,
@@ -82,7 +83,9 @@ def detect_brute_force(packets, attempt_threshold=ATTEMPT_THRESHOLD,
                     "target_port": dst_port,
                     "service": service,
                     "attempts": len(timestamps),
-                    "duration_seconds": round(duration, 1)
+                    "duration_seconds": round(duration, 1),
+                    "first_seen": datetime.fromtimestamp(sorted_times[0]).strftime("%Y-%m-%d %H:%M:%S"),
+                    "last_seen": datetime.fromtimestamp(sorted_times[-1]).strftime("%Y-%m-%d %H:%M:%S"),
                 })
     
     return alerts
